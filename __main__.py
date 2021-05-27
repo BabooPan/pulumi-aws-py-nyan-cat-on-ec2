@@ -1,10 +1,10 @@
 import pulumi
-import pulumi_aws as aws
+from pulumi_aws import ec2
 
 # load the pulumi config
 config = pulumi.Config()
 
-sg = aws.ec2.SecurityGroup('sg',
+sg = ec2.SecurityGroup('nyan-server',
     description='security group for web server',
     ingress=[
         # allow ping in
@@ -37,26 +37,29 @@ sg = aws.ec2.SecurityGroup('sg',
             "to_port": 0,
             "cidr_blocks": ["0.0.0.0/0"],
         }
-    ]
+    ],
+    tags={
+        "Name": "nyan-server",
+    }
 )
 
 # Get AMI to provision EC2
-ami = aws.ec2.get_ami(
+ami = ec2.get_ami(
     owners=['amazon'],
     most_recent=True,
-    filters=[aws.ec2.GetAmiFilterArgs(
+    filters=[ec2.GetAmiFilterArgs(
         name='name',
-        values=['amzn2-ami-hvm-*-x86_64-gp2'],
+        values=['amzn2-ami-hvm-*-arm64-gp2'],
     )],
 )
 
 # Get default VPC
-vpc = aws.ec2.get_vpc(default=True)
+vpc = ec2.get_vpc(default=True)
 
 # Provision EC2 Instance
-server = aws.ec2.Instance(
+server = ec2.Instance(
     'nyan-server',
-    instance_type="t2.micro",
+    instance_type="t4g.micro",
     vpc_security_group_ids=[sg.id],
     ami=ami.id,
     user_data="""#!/bin/bash
